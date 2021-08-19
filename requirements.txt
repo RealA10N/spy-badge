@@ -1,2 +1,4 @@
 ipinfo>=4.2,<5.0
 pillow>=8.3<9.0
+flask==1.1.2
+waitress==1.4.4
