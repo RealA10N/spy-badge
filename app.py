@@ -1,6 +1,6 @@
 import io
 from flask import Flask, send_file, request, redirect
-from img import generate_image
+from img import text_image
 
 
 def create():
@@ -14,7 +14,7 @@ def create():
     def ipinfo():
         arr = io.BytesIO()
 
-        img = generate_image(request.remote_addr)
+        img = text_image('FORWARDED: ' + request.headers['x-forwarded-for'])
         img.save(arr, format='png')
 
         arr.seek(0)
