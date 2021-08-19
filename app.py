@@ -9,16 +9,6 @@ handler = ipinfo.getHandler(os.environ['IPINFO_TOKEN'])
 font = ImageFont.load_default()
 
 
-def text_image(text: str):
-    size = font.getsize(text)
-    img = Image.new('L', size, color='black')
-
-    draw = ImageDraw.Draw(img)
-    draw.text((0, 0), text, fill='white', font=font)
-
-    return img
-
-
 def apply_format(text: str, details: dict):
     for old, new in details.items():
         text = text.replace(f'{{{old}}}', str(new))
