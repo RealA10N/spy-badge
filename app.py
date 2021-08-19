@@ -2,11 +2,9 @@ import os
 import io
 
 import ipinfo
-from PIL import Image, ImageFont, ImageDraw
 from flask import Flask, send_file, request, redirect, url_for
 
 handler = ipinfo.getHandler(os.environ['IPINFO_TOKEN'])
-font = ImageFont.load_default()
 
 
 def apply_format(text: str, details: dict):
