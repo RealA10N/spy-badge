@@ -25,7 +25,23 @@ def apply_format(text: str, details: dict):
     return text
 
 
-def request_ip():
+def request_ip() -> str:
+
+    # If request is forwarded by some server, the forwarded request
+    # should have a header that is attached by the forwarding server
+    # with the name 'x-forwarded-for'.
+    header = request.headers.get('x-forwarded-for')
+
+    if header:
+        # The header stores a list of ips in a stack, where the last one
+        # in the list is the original ip of the original request. List
+        # values are seperated by ','.
+        return header.split(',')[-1]
+
+    else:
+        # If request is not forwarded, return basic request ip.
+        return request.remote_addr
+
     return request.headers['x-forwarded-for'].split(',')[-1]
 
 
@@ -61,10 +77,6 @@ def create():
     @app.route('/badge.png')
     def badge():
 
-        # Heroku uses an internal routing system to forward the original request,
-        # and attaches a 'x-forwarded-for' header to requests.
-        # To get the IP address of the original request, we will check the
-        # 'x-forwarded-for' header, and will get the last item in the list.
         ip = request_ip()
 
         # Default badge text will just show the ip of the user request.
