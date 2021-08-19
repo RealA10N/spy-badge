@@ -44,22 +44,20 @@ def create():
 
     @app.route('/badge.svg')
     def badge_svg():
+        # TODO: option to pass default values to formatted variables.
 
-        label = request.args.get('label') or '{city}'
-        message = request.args.get('message') or '{country_name}'
-        color = request.args.get('color')
+        args = {
+            # Default badge format
+            'label': '{city}',
+            'message': '{country_name}',
+        } | request.args
 
         ip = request_ip()
         details = handler.getDetails(ip).details
 
         params = '&'.join((
             f'{name}={apply_format(value, details)}'
-            for name, value in {
-                'label': label,
-                'message': message,
-                'color': color,
-            }.items()
-            if value is not None
+            for name, value in args.items()
         ))
 
         return redirect(f'https://img.shields.io/static/v1?{params}')
