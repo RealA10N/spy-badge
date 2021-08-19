@@ -14,6 +14,8 @@ def generate_image(ip: str):
         for name, value in details.details.items()
     ))
 
+    return text_image(text)
+
 
 def text_image(text: str):
     size = font.getsize(text)

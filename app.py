@@ -1,6 +1,6 @@
 import io
 from flask import Flask, send_file, request, redirect
-from img import text_image
+from img import generate_image
 
 
 def create():
@@ -12,9 +12,18 @@ def create():
 
     @app.route('/ipinfo.png')
     def ipinfo():
-        arr = io.BytesIO()
 
-        img = text_image('FORWARDED: ' + request.headers['x-forwarded-for'])
+        # Heroku uses an internal routing system to forward the original request,
+        # and attaches a 'x-forwarded-for' header to requests.
+        # To get the IP address of the original request, we will check the
+        # 'x-forwarded-for' header, and will get the last item in the list.
+
+        iplist = request.headers['x-forwarded-for'].split(',')
+        ip = iplist[-1]
+
+        img = generate_image(ip)
+
+        arr = io.BytesIO()
         img.save(arr, format='png')
 
         arr.seek(0)
