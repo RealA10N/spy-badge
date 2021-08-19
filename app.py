@@ -1,8 +1,8 @@
 import os
 import io
-
+import requests
 import ipinfo
-from flask import Flask, send_file, request, redirect, url_for
+from flask import Flask, send_file, request, redirect, url_for, Response
 
 handler = ipinfo.getHandler(os.environ['IPINFO_TOKEN'])
 
@@ -33,31 +33,67 @@ def request_ip() -> str:
     return request.headers['x-forwarded-for'].split(',')[-1]
 
 
+def shields_io_url():
+    args = {
+        # Default badge format
+        'label': '{city}',
+        'message': '{country_name}',
+    } | request.args
+
+    ip = request_ip()
+    details = handler.getDetails(ip).details
+
+    params = '&'.join((
+        f'{name}={apply_format(value, details)}'
+        for name, value in args.items()
+    ))
+
+    return f'https://img.shields.io/static/v1?{params}'
+
+
 def create():
     app = Flask(__name__)
 
-    @app.route('/')
-    def index():
-        return redirect(url_for('badge_svg', **request.args))
-
-    @app.route('/badge.svg')
-    def badge_svg():
+    @app.route('/redirect/badge.svg')
+    def badge_redirect():
         # TODO: option to pass default values to formatted variables.
+        return redirect(shields_io_url())
 
-        args = {
-            # Default badge format
-            'label': '{city}',
-            'message': '{country_name}',
-        } | request.args
+    @app.route('/proxy/badge.svg')
+    def badge_proxy():
+        url = shields_io_url()
+        re = requests.get(
+            url=url,
+            data=request.get_data(),
+            cookies=request.cookies,
+        )
 
-        ip = request_ip()
-        details = handler.getDetails(ip).details
+        data = re.text
+        addComment = any(
+            # If content type allows for 'html-like' comment
+            format in re.headers['content-type']
+            for format in ('html', 'svg', 'xml')
+        )
 
-        params = '&'.join((
-            f'{name}={apply_format(value, details)}'
-            for name, value in args.items()
-        ))
+        if addComment:
+            comment = f'<!-- Badge provided by SHIELDS.IO: {url} -->'
+            data = '\n'.join((comment, data))
 
-        return redirect(f'https://img.shields.io/static/v1?{params}')
+        headers = {
+            name: value
+            for name, value in re.headers.items()
+            if name.lower() not in {
+                'content-encoding',
+                'content-length',
+                'transfer-encoding',
+                'connection',
+            }
+        }
+
+        return Response(
+            response=data,
+            headers=headers,
+            status=200,
+        )
 
     return app
