@@ -19,12 +19,44 @@ def text_image(text: str):
     return img
 
 
+def apply_format(text: str, details: dict):
+    for old, new in details.items():
+        text = text.replace(f'{{{old}}}', new)
+    return text
+
+
+def request_ip():
+    return request.headers['x-forwarded-for'].split(',')[-1]
+
+
 def create():
     app = Flask(__name__)
 
     @app.route('/')
     def index():
         return redirect(url_for('badge', **request.args))
+
+    @app.route('/badge.svg')
+    def badge_svg():
+
+        label = request.args.get('label') or '{city}'
+        message = request.args.get('message') or '{country_name}'
+        color = request.args.get('color')
+
+        ip = request_ip()
+        details = handler.getDetails(ip).details
+
+        params = '&'.join((
+            f'{name}={apply_format(value, details)}'
+            for name, value in {
+                'label': label,
+                'message': message,
+                'color': color,
+            }.items()
+            if value is not None
+        ))
+
+        return redirect(f'https://img.shields.io/static/v1?{params}')
 
     @app.route('/badge.png')
     def badge():
@@ -33,17 +65,12 @@ def create():
         # and attaches a 'x-forwarded-for' header to requests.
         # To get the IP address of the original request, we will check the
         # 'x-forwarded-for' header, and will get the last item in the list.
-        ip = request.headers['x-forwarded-for'].split(',')[-1]
-        details = handler.getDetails(ip).details
+        ip = request_ip()
 
         # Default badge text will just show the ip of the user request.
         # If format is provided using the 'format' param, will use that!
-        text = request.args.get('format') or '{ip}'
-
-        # Replace variables in format with actual data
-        for old, new in details.items():
-            print(f'{old=}, {new=}')
-            text = text.replace(f'{{{old}}}', new)
+        format = request.args.get('format') or '{ip}'
+        text = apply_format(format)
 
         # Generate image from given text
         img = text_image(text)
