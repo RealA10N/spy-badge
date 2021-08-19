@@ -21,7 +21,7 @@ def text_image(text: str):
 
 def apply_format(text: str, details: dict):
     for old, new in details.items():
-        text = text.replace(f'{{{old}}}', new)
+        text = text.replace(f'{{{old}}}', str(new))
     return text
 
 
@@ -50,7 +50,7 @@ def create():
 
     @app.route('/')
     def index():
-        return redirect(url_for('badge', **request.args))
+        return redirect(url_for('badge_svg', **request.args))
 
     @app.route('/badge.svg')
     def badge_svg():
@@ -73,26 +73,5 @@ def create():
         ))
 
         return redirect(f'https://img.shields.io/static/v1?{params}')
-
-    @app.route('/badge.png')
-    def badge():
-
-        ip = request_ip()
-
-        # Default badge text will just show the ip of the user request.
-        # If format is provided using the 'format' param, will use that!
-        format = request.args.get('format') or '{ip}'
-        text = apply_format(format)
-
-        # Generate image from given text
-        img = text_image(text)
-
-        # Save image to memory
-        arr = io.BytesIO()
-        img.save(arr, format='png')
-
-        # Return the image as a file
-        arr.seek(0)
-        return send_file(arr, mimetype='image/png')
 
     return app
