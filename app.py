@@ -62,11 +62,8 @@ def create():
     @app.route('/proxy/badge.svg')
     def badge_proxy():
         url = shields_io_url()
-        re = requests.get(
-            url=url,
-            data=request.get_data(),
-            cookies=request.cookies,
-        )
+        re = requests.get(url=url, data=request.get_data(),
+                          cookies=request.cookies)
 
         data = re.text
         addComment = any(
@@ -83,17 +80,11 @@ def create():
             name: value
             for name, value in re.headers.items()
             if name.lower() not in {
-                'content-encoding',
-                'content-length',
-                'transfer-encoding',
-                'connection',
+                'content-encoding', 'content-length',
+                'transfer-encoding', 'connection',
             }
         }
 
-        return Response(
-            response=data,
-            headers=headers,
-            status=200,
-        )
+        return Response(response=data, headers=headers, status=200)
 
     return app
